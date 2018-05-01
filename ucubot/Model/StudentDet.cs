@@ -2,10 +2,10 @@ namespace ucubot.Model
 {
     public class StudentDet
     {
-        public string first_name { get; set; }
+        public string FirstName { get; set; }
         
-        public string last_name { get; set; }
+        public string LastName { get; set; }
 
-        public string user_id { get; set; }
+        public string UserId { get; set; }
     }
 }
