@@ -105,12 +105,17 @@ namespace ucubot.Controllers
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
-                var countSql = "SELECT COUNT(*) FROM student WHERE user_id=@UserId";
-                var num_stud = conn.ExecuteScalar<int>(countSql, new {userId});
-                if (num_stud == 1)
+                var countSql1 = "SELECT COUNT(*) FROM student WHERE user_id=@UserId";
+                var num_stud = conn.ExecuteScalar<int>(countSql1, new {userId});
+                var countSql2 = "SELECT COUNT(*) FROM lesson_signal WHERE student_id=@Id";
+                var num_sig = conn.ExecuteScalar<int>(countSql2, new {Id});
+
+                
+                if (num_stud == 1 || num_sig > 0)
                 {
                     return StatusCode(409);
                 }
+
                 else
                 {
                     var sqlQuery =
