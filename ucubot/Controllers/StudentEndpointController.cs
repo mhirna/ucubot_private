@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -111,11 +111,15 @@ namespace ucubot.Controllers
                 var num_sig = conn.ExecuteScalar<int>(countSql2, new {Id});
 
                 
-                if (num_stud == 1 || num_sig > 0)
+                if (num_stud == 0)
+                {
+                    return StatusCode(404);
+                }
+
+                if (num_sig > 0)
                 {
                     return StatusCode(409);
                 }
-
                 else
                 {
                     var sqlQuery =
@@ -138,7 +142,6 @@ namespace ucubot.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> RemoveSignal(long id)
         {
-            //TODO: add delete command to remove signal
             var connectionString = _configuration.GetConnectionString("BotDatabase");
 
 
