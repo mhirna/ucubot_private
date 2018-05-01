@@ -60,9 +60,9 @@ namespace ucubot.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateStudent(StudentDet info)
         {
-            var firstName = info.first_name;
-            var lastName = info.last_name;
-            var userId = info.user_id;
+            var firstName = info.FirstName;
+            var lastName = info.LastName;
+            var userId = info.UserId;
             var connectionString = _configuration.GetConnectionString("BotDatabase");
 
             using (var conn = new MySqlConnection(connectionString))
@@ -142,7 +142,7 @@ namespace ucubot.Controllers
                 conn.Open();
                 var countSql = "SELECT COUNT(*) FROM lesson_signal WHERE student_id=@Id";
                 var num_sig = conn.ExecuteScalar<int>(countSql, new {id});
-                if (num_sig > 1)
+                if (num_sig > 0)
                 {
                     return StatusCode(409);
                 }
