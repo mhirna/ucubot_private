@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -30,7 +30,7 @@ namespace ucubot.Controllers
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
-                var command = "SELECT lesson_signal.Id, lesson_signal.SignalType, " +
+                var command = "SELECT lesson_signal.Id, lesson_signal.SignalType as Type, " +
                               "lesson_signal.Timestamp, student.user_id AS UserId FROM lesson_signal " +
                               "INNER JOIN student ON lesson_signal.student_id=student.id;";
                 List<LessonSignalDto> signals = conn.Query<LessonSignalDto>(command).ToList();
@@ -45,11 +45,11 @@ namespace ucubot.Controllers
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
-                var command = "SELECT lesson_signal.Id, lesson_signal.SignalType, " +
+                var command = "SELECT lesson_signal.Id, lesson_signal.SignalType AS Type, " +
                                                "lesson_signal.Timestamp, student.user_id AS UserId FROM lesson_signal " +
                                                "INNER JOIN student ON lesson_signal.student_id=student.id " +
-                                               "WHERE lesson_signal.Id=@id;";
-                LessonSignalDto signal = conn.Query<LessonSignalDto>(command, new {id}).SingleOrDefault();
+                                               "WHERE lesson_signal.Id=@Id;";
+                LessonSignalDto signal = conn.Query<LessonSignalDto>(command, new {Id = id}).SingleOrDefault();
                 if (signal == null)
                 {
                     Response.StatusCode = 404;
@@ -63,8 +63,7 @@ namespace ucubot.Controllers
         public async Task<IActionResult> CreateSignal(SlackMessage message)
         {
             var userId = message.user_id;
-            var signalType = message.text.ConvertSlackMessageToSignalType();
-
+            var signalType = Convert.ToInt32(message.text.ConvertSlackMessageToSignalType());
             var connectionString = _configuration.GetConnectionString("BotDatabase");
 
             using (var conn = new MySqlConnection(connectionString))
@@ -97,9 +96,7 @@ namespace ucubot.Controllers
         public async Task<IActionResult> RemoveSignal(long id)
         {
             //TODO: add delete command to remove signal
-            var connectionString = _configuration.GetConnectionString("BotDatabase");
-
-      
+            var connectionString = _configuration.GetConnectionString("BotDatabase");      
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
