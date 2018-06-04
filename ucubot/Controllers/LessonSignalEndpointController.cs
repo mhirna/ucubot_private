@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using ucubot.Model;
 using Dapper;
+using ucubot.Databases;
 
 namespace ucubot.Controllers
 {
@@ -17,94 +18,55 @@ namespace ucubot.Controllers
     public class LessonSignalEndpointController : Controller
     {
         private readonly IConfiguration _configuration;
+        private readonly ILessonSignalRepository _repository;
 
-        public LessonSignalEndpointController(IConfiguration configuration)
+        public LessonSignalEndpointController(IConfiguration configuration, ILessonSignalRepository repository)
         {
             _configuration = configuration;
+            _repository = repository;
         }
 
         [HttpGet]
         public IEnumerable<LessonSignalDto> ShowSignals()
         {
             var connectionString = _configuration.GetConnectionString("BotDatabase");
-            using (var conn = new MySqlConnection(connectionString))
-            {
-                conn.Open();
-                var command = "SELECT lesson_signal.Id, lesson_signal.SignalType as Type, " +
-                              "lesson_signal.Timestamp, student.user_id AS UserId FROM lesson_signal " +
-                              "INNER JOIN student ON lesson_signal.student_id=student.id;";
-                List<LessonSignalDto> signals = conn.Query<LessonSignalDto>(command).ToList();
-                return signals;
-            }
+
+            return _repository.ShowSignals(connectionString);
+            
         }
 
         [HttpGet("{id}")]
         public LessonSignalDto ShowSignal(long id)
         {
             var connectionString = _configuration.GetConnectionString("BotDatabase");
-            using (var conn = new MySqlConnection(connectionString))
-            {
-                conn.Open();
-                var command = "SELECT lesson_signal.Id, lesson_signal.SignalType AS Type, " +
-                                               "lesson_signal.Timestamp, student.user_id AS UserId FROM lesson_signal " +
-                                               "INNER JOIN student ON lesson_signal.student_id=student.id " +
-                                               "WHERE lesson_signal.Id=@Id;";
-                LessonSignalDto signal = conn.Query<LessonSignalDto>(command, new {Id = id}).SingleOrDefault();
-                if (signal == null)
-                {
-                    Response.StatusCode = 404;
-                    return null;
-                }                
-                return signal;
-            }
+            LessonSignalDto signal = _repository.ShowSignal(connectionString, id);
+            
+            if (signal == null){Response.StatusCode = 404;}
+            
+            return signal;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateSignal(SlackMessage message)
         {
-            var userId = message.user_id;
-            var signalType = Convert.ToInt32(message.text.ConvertSlackMessageToSignalType());
             var connectionString = _configuration.GetConnectionString("BotDatabase");
+            
+            int result = _repository.CreateSignal(connectionString, message);
 
-            using (var conn = new MySqlConnection(connectionString))
+            if (result == 0)
             {
-                conn.Open();
-                var check_com = "SELECT id FROM student WHERE user_id=@UserId";
-                var num_stud = conn.ExecuteScalar<object>(check_com, new {userId});
-                if (num_stud == null)
-                {
-                    return BadRequest();
-                }
-                else
-                {
-                    var id = Convert.ToInt32(num_stud);
-                    var command = "INSERT INTO lesson_signal (SignalType, student_id) VALUES (@SignalType, @Id);";
-                    conn.Execute(command,
-                        new
-                        {
-                            signalType,
-                            id
-                        });
-                    conn.Close();
-                }
+                return BadRequest();
             }
+
             return Accepted();
-}
+        }
                
-        
         [HttpDelete("{id}")]
         public async Task<IActionResult> RemoveSignal(long id)
         {
-            //TODO: add delete command to remove signal
             var connectionString = _configuration.GetConnectionString("BotDatabase");      
-            using (var conn = new MySqlConnection(connectionString))
-            {
-                conn.Open();
-                var command = new MySqlCommand("DELETE FROM lesson_signal WHERE Id = @id;", conn);
-                command.Parameters.Add(new MySqlParameter("Id", id));
-                command.ExecuteNonQuery();
-                conn.Close();
-            }
+            
+            _repository.RemoveSignal(connectionString, id);
             
             return Accepted();
         }

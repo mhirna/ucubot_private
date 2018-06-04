@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using ucubot.Model;
 using Dapper;
+using ucubot.Databases;
 
 namespace ucubot.Controllers
 {
@@ -17,77 +18,46 @@ namespace ucubot.Controllers
     public class StudentEndpointController : Controller
     {
         private readonly IConfiguration _configuration;
+        private readonly IStudentRepository _repository;
 
-        public StudentEndpointController(IConfiguration configuration)
+        public StudentEndpointController(IConfiguration configuration, IStudentRepository repository)
         {
             _configuration = configuration;
+            _repository = repository;
         }
         
         [HttpGet]
         public IEnumerable<Student> ShowStudent()
         {
             var connectionString = _configuration.GetConnectionString("BotDatabase");
-            using (var conn = new MySqlConnection(connectionString))
-            {
-                conn.Open();
-                var command = "SELECT student.id AS Id, student.first_name AS FirstName, " +
-                              "student.last_name AS LastName, student.user_id AS UserId FROM student;";
-                List<Student> signals = conn.Query<Student>(command).ToList();
-                return signals;
-            }
+            
+            return _repository.ShowStudents(connectionString);
         }
 
         [HttpGet("{id}")]
         public Student ShowStudent(long id)
         {
             var connectionString = _configuration.GetConnectionString("BotDatabase");
-            using (var conn = new MySqlConnection(connectionString))
-            {
-                conn.Open();
-                var command = "SELECT student.id AS Id, student.first_name AS FirstName, " +
-                              "student.last_name AS LastName, student.user_id AS UserId FROM student WHERE student.id=@id;";
-                Student student = conn.Query<Student>(command, new {id}).SingleOrDefault();
-                if (student == null)
-                {
-                    Response.StatusCode = 404;
-                    return null;
-                }
 
-                return student;
+            Student student = _repository.ShowStudent(connectionString, id);
+
+            if (student == null)
+            {
+                Response.StatusCode = 404;
+                return null;
             }
+
+            return student;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateStudent(StudentDet info)
         {
-            var firstName = info.FirstName;
-            var lastName = info.LastName;
-            var userId = info.UserId;
+
             var connectionString = _configuration.GetConnectionString("BotDatabase");
-
-            using (var conn = new MySqlConnection(connectionString))
-            {
-                conn.Open();
-                var countSql = "SELECT COUNT(*) FROM student WHERE user_id=@UserId";
-                var num_stud = conn.ExecuteScalar<int>(countSql, new {userId});
-                if (num_stud == 1)
-                {
-                    return StatusCode(409);
-                }
-                else
-                {
-                    var sqlQuery =
-                        "INSERT INTO student(first_name, last_name, user_id) VALUES (@FirstName,@LastName,@UserId)";
-                    conn.Execute(sqlQuery,
-                        new
-                        {
-                            firstName,
-                            lastName,
-                            userId
-                        });
-                }
-            }
-
+            int result = _repository.CreateStudent(connectionString, info);
+            if (result == 409){return StatusCode(409);}
+            
             return Accepted();
         }
 
@@ -95,73 +65,25 @@ namespace ucubot.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateStudent(Student student)
         {
-            var firstName = student.FirstName;
-            var lastName = student.LastName;
-            var userId = student.UserId;
-            var Id = student.Id;
 
             var connectionString = _configuration.GetConnectionString("BotDatabase");
-
-            using (var conn = new MySqlConnection(connectionString))
-            {
-                conn.Open();
-                var countSql1 = "SELECT COUNT(*) FROM student WHERE user_id=@UserId";
-                var num_stud = conn.ExecuteScalar<int>(countSql1, new {userId});
-                var countSql2 = "SELECT COUNT(*) FROM lesson_signal WHERE student_id=@Id";
-                var num_sig = conn.ExecuteScalar<int>(countSql2, new {Id});
-
-                
-                if (num_stud == 0)
-                {
-                    return StatusCode(404);
-                }
-
-                if (num_sig > 0)
-                {
-                    return StatusCode(409);
-                }
-                else
-                {
-                    var sqlQuery =
-                        "UPDATE student SET first_name=@FirstName, last_name=@LastName, user_id=@UserId WHERE id=@Id;";
-                    conn.Execute(sqlQuery,
-                        new
-                        {
-                            firstName,
-                            lastName,
-                            userId,
-                            Id,
-                        });
-                }
-            }
-
+      
+            int result = _repository.UpdateStudent(connectionString, student);
+            if (result == 409){return StatusCode(409);}
+            if (result == 404){return StatusCode(404);}      
+            
             return Accepted();
         }
 
-
+        
         [HttpDelete("{id}")]
         public async Task<IActionResult> RemoveSignal(long id)
         {
             var connectionString = _configuration.GetConnectionString("BotDatabase");
 
-
-            using (var conn = new MySqlConnection(connectionString))
-            {
-                conn.Open();
-                var countSql = "SELECT COUNT(*) FROM lesson_signal WHERE student_id=@Id";
-                var num_sig = conn.ExecuteScalar<int>(countSql, new {id});
-                if (num_sig > 0)
-                {
-                    return StatusCode(409);
-                }
-                else
-                {
-                    var sqlQuery = "DELETE FROM student WHERE id=@Id;";
-                    conn.Execute(sqlQuery,
-                        new {id});
-                }
-            }
-
+            int result = _repository.RemoveSignal(connectionString, id);
+            if (result == 409){return StatusCode(409);}
+            
             return Accepted();
         }
     }
