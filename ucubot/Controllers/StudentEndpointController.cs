@@ -17,29 +17,25 @@ namespace ucubot.Controllers
     [Route("api/[controller]")]
     public class StudentEndpointController : Controller
     {
-        private readonly IConfiguration _configuration;
         private readonly IStudentRepository _repository;
 
-        public StudentEndpointController(IConfiguration configuration, IStudentRepository repository)
+        public StudentEndpointController(IStudentRepository repository)
         {
-            _configuration = configuration;
             _repository = repository;
         }
         
         [HttpGet]
         public IEnumerable<Student> ShowStudent()
         {
-            var connectionString = _configuration.GetConnectionString("BotDatabase");
             
-            return _repository.ShowStudents(connectionString);
+            return _repository.ShowStudents();
         }
 
         [HttpGet("{id}")]
         public Student ShowStudent(long id)
         {
-            var connectionString = _configuration.GetConnectionString("BotDatabase");
 
-            Student student = _repository.ShowStudent(connectionString, id);
+            Student student = _repository.ShowStudent(id);
 
             if (student == null)
             {
@@ -53,9 +49,7 @@ namespace ucubot.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateStudent(StudentDet info)
         {
-
-            var connectionString = _configuration.GetConnectionString("BotDatabase");
-            int result = _repository.CreateStudent(connectionString, info);
+            int result = _repository.CreateStudent(info);
             if (result == 409){return StatusCode(409);}
             
             return Accepted();
@@ -65,10 +59,8 @@ namespace ucubot.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateStudent(Student student)
         {
-
-            var connectionString = _configuration.GetConnectionString("BotDatabase");
       
-            int result = _repository.UpdateStudent(connectionString, student);
+            int result = _repository.UpdateStudent(student);
             if (result == 409){return StatusCode(409);}
             if (result == 404){return StatusCode(404);}      
             
@@ -79,9 +71,7 @@ namespace ucubot.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> RemoveSignal(long id)
         {
-            var connectionString = _configuration.GetConnectionString("BotDatabase");
-
-            int result = _repository.RemoveSignal(connectionString, id);
+            int result = _repository.RemoveSignal(id);
             if (result == 409){return StatusCode(409);}
             
             return Accepted();
