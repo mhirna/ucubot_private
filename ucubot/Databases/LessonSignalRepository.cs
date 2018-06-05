@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using ucubot.Model;
 
@@ -11,8 +12,17 @@ namespace ucubot.Databases
 {
     public class LessonSignalRepository: ILessonSignalRepository
     {
-        public IEnumerable<LessonSignalDto> ShowSignals(string connectionString)
+        private readonly IConfiguration _configuration;
+
+        public LessonSignalRepository(IConfiguration configuration)
         {
+            _configuration = configuration;
+        }
+        
+        public IEnumerable<LessonSignalDto> ShowSignals()
+        {
+            var connectionString = _configuration.GetConnectionString("BotDatabase");
+
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
@@ -24,8 +34,10 @@ namespace ucubot.Databases
             };
         }
 
-        public LessonSignalDto ShowSignal(string connectionString, long id)
+        public LessonSignalDto ShowSignal(long id)
         {
+            var connectionString = _configuration.GetConnectionString("BotDatabase");
+
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
@@ -42,8 +54,10 @@ namespace ucubot.Databases
             }
         }
 
-        public int CreateSignal(string connectionString, SlackMessage message)
+        public int CreateSignal(SlackMessage message)
         {
+            var connectionString = _configuration.GetConnectionString("BotDatabase");
+
             var userId = message.user_id;
             var signalType = Convert.ToInt32(message.text.ConvertSlackMessageToSignalType());
 
@@ -73,8 +87,10 @@ namespace ucubot.Databases
 
         }
 
-        public void RemoveSignal(string connectionString, long id)
+        public void RemoveSignal(long id)
         {
+            var connectionString = _configuration.GetConnectionString("BotDatabase");
+
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
