@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using ucubot.Model;
 
@@ -8,8 +9,17 @@ namespace ucubot.Databases
 {
     public class StudentRepository: IStudentRepository
     {
-        public IEnumerable<Student> ShowStudents(string connectionString)
+        private readonly IConfiguration _configuration;
+        
+        public StudentRepository(IConfiguration configuration)
         {
+            _configuration = configuration;
+        }
+
+        public IEnumerable<Student> ShowStudents()
+        {
+            var connectionString = _configuration.GetConnectionString("BotDatabase");
+
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
@@ -20,8 +30,10 @@ namespace ucubot.Databases
             }
         }
 
-        public Student ShowStudent(string connectionString, long id)
+        public Student ShowStudent(long id)
         {
+            var connectionString = _configuration.GetConnectionString("BotDatabase");
+
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
@@ -38,8 +50,10 @@ namespace ucubot.Databases
 
         }
 
-        public int CreateStudent(string connectionString, StudentDet info)
+        public int CreateStudent(StudentDet info)
         {
+            var connectionString = _configuration.GetConnectionString("BotDatabase");
+
             var firstName = info.FirstName;
             var lastName = info.LastName;
             var userId = info.UserId;
@@ -67,8 +81,10 @@ namespace ucubot.Databases
             return 0;
         }
 
-        public int UpdateStudent(string connectionString, Student student)
+        public int UpdateStudent(Student student)
         {
+            var connectionString = _configuration.GetConnectionString("BotDatabase");
+
             var firstName = student.FirstName;
             var lastName = student.LastName;
             var userId = student.UserId;
@@ -109,8 +125,10 @@ namespace ucubot.Databases
             return 0;
         }
 
-        public int RemoveSignal(string connectionString, long id)
+        public int RemoveSignal(long id)
         {
+            var connectionString = _configuration.GetConnectionString("BotDatabase");
+
             using (var conn = new MySqlConnection(connectionString))
             {
                 conn.Open();
