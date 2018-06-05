@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -17,21 +17,17 @@ namespace ucubot.Controllers
     [Route("api/[controller]")]
     public class StudentSignalsEndpointController : Controller
     {
-        private readonly IConfiguration _configuration;
         private readonly IStudentSignalRepository _repository;
 
-        public StudentSignalsEndpointController(IConfiguration configuration, IStudentSignalRepository repository)
+        public StudentSignalsEndpointController(IStudentSignalRepository repository)
         {
-            _configuration = configuration;
             _repository = repository;
         }
         
         [HttpGet]
         public IEnumerable<StudentSignal> ShowStudent()
         {
-            var connectionString = _configuration.GetConnectionString("BotDatabase");
-            
-            return _repository.ShowStudentSignals(connectionString);
+            return _repository.ShowStudentSignals();
         }
     }
 }
